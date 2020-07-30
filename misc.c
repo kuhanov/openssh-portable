@@ -241,7 +241,7 @@ set_rdomain(int fd, const char *name)
  * Returns 0 if fd ready or -1 on timeout or error (see errno).
  *
  */
-int
+static int
 waitfd(int fd, int *timeoutp, short events)
 {
 	struct pollfd pfd;
@@ -274,7 +274,7 @@ waitfd(int fd, int *timeoutp, short events)
  * Returns 0 if fd ready or -1 on timeout or error (see errno).
  *
  */
-static int
+int
 waitrfd(int fd, int *timeoutp)
 {
     return waitfd(fd, timeoutp, POLLIN);
