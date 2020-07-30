@@ -236,12 +236,13 @@ set_rdomain(int fd, const char *name)
 }
 
 /*
- * Wait up to *timeoutp milliseconds for fd to be readable. Updates
+ * Wait up to *timeoutp milliseconds for events on fd. Updates
  * *timeoutp with time remaining.
  * Returns 0 if fd ready or -1 on timeout or error (see errno).
+ *
  */
-int
-waitrfd(int fd, int *timeoutp)
+static int
+waitfd(int fd, int *timeoutp, short events)
 {
 	struct pollfd pfd;
 	struct timeval t_start;
@@ -249,7 +250,7 @@ waitrfd(int fd, int *timeoutp)
 
 	monotime_tv(&t_start);
 	pfd.fd = fd;
-	pfd.events = POLLIN;
+	pfd.events = events;
 	for (; *timeoutp >= 0;) {
 		r = poll(&pfd, 1, *timeoutp);
 		oerrno = errno;
@@ -265,6 +266,18 @@ waitrfd(int fd, int *timeoutp)
 	/* timeout */
 	errno = ETIMEDOUT;
 	return -1;
+}
+
+/*
+ * Wait up to *timeoutp milliseconds for fd to be readable. Updates
+ * *timeoutp with time remaining.
+ * Returns 0 if fd ready or -1 on timeout or error (see errno).
+ *
+ */
+static int
+waitrfd(int fd, int *timeoutp)
+{
+    return waitfd(fd, timeoutp, POLLIN);
 }
 
 /*
@@ -293,7 +306,7 @@ timeout_connect(int sockfd, const struct sockaddr *serv_addr,
 	} else if (errno != EINPROGRESS)
 		return -1;
 
-	if (waitrfd(sockfd, timeoutp) == -1)
+	if (waitfd(sockfd, timeoutp, POLLIN | POLLOUT))
 		return -1;
 
 	/* Completed or failed */
